@@ -2,12 +2,17 @@ package penguins;
 
 public class SeaLion extends Animal{
 	private int spots;
-	public SeaLion(String species, char sex, float weight, double[][] gps) {
-		super(species, sex, weight, gps);
+	public SeaLion(String species, char sex, float weight, String coords) {
+		super(species, sex, weight, coords);
 		// TODO Auto-generated constructor stub
 	}
 	
-	public SeaLion(String species, char sex, float weight, double[][] gps, int spots) {
+	public SeaLion(String species, char sex, float weight, String coords, int spots) {
+		super(species, sex, weight, coords);
+		this.setSpots(spots);
+		// TODO Auto-generated constructor stub
+	}
+	public SeaLion(String species, char sex, float weight, Gps gps, int spots) {
 		super(species, sex, weight, gps);
 		this.setSpots(spots);
 		// TODO Auto-generated constructor stub
@@ -15,7 +20,7 @@ public class SeaLion extends Animal{
 	
 	@Override
 	public String makeString(){
-		String s = super.makeString() + "\t" + this.getSpots();
+		String s = super.makeString() + "   " + this.getSpots();
 		return s;
 	}
 	
