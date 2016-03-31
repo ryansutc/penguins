@@ -10,21 +10,22 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Business {
-	private Scanner scan;
-	private ArrayList<Animal> animals = new ArrayList<Animal>(); //dynamic arraylist of animals 
+	private ArrayList<Animal> animals; //dynamic arraylist of animals 
 	private String outputPath;
 	private String inputPath;
 
 	public Business(){
 		this.outputPath = "c:/temp/penguinfile.txt";
 		this.inputPath = "c:/temp/penguinfile.txt";
+		animals = new ArrayList<Animal>(); 
 	}
 	
-	public void addAnimal(String type, char sex, float weight, double gps[][], String theme){
+	public void addAnimal(String type, char sex, float weight, Gps gps, String theme){
 		//create an animal and add to a dynamic array of animals
 
 		type = type.toLowerCase().replace(" ", "");
 		System.out.println(type);
+		System.out.println("coordlist size: " + gps.coordList.size());
 		if (type.equals("penguin")){
 			
 			Animal newAnimal = new Penguin(type, sex, weight, gps, Double.parseDouble(theme));
@@ -43,6 +44,7 @@ public class Business {
 	
 	public String listAnimals(){
 		String s = "";
+		System.out.println(""+animals.size());
 		for (Animal a : animals) {
 			//polymorphism in action
 			System.out.println(a.makeString());
@@ -55,11 +57,22 @@ public class Business {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(filepath));
 		try{
 			
-			bw.write("\nspecies\t sex\t weight\t lat\t long\t theme\t");
+			bw.write("\nid   species   sex   weight   theme   lat & long   ");
 			bw.newLine();
+			int x = 1;
 			for (Animal a : animals) {
-				bw.write("\n" + a.makeString());
-				bw.newLine();
+				if (a.gps.coordList.isEmpty()){
+					bw.write("\n" + x + "   " + a.makeString() + "   ");
+					bw.newLine();
+				}
+				else{
+					for (String s: a.gps.coordList){
+						bw.write("\n" + x + "   " + a.makeString() + "   " + s);
+						bw.newLine();
+	
+					}
+				}
+				x += 1;
 			}
 		
 		}
@@ -125,6 +138,9 @@ public class Business {
 
 	public void setinputPath(String inputPath) {
 		this.inputPath = inputPath;
+	}
+	public ArrayList<Animal> getAnimals(){
+		return this.animals;
 	}
 
 }
