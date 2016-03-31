@@ -5,25 +5,42 @@ public class Animal {
 	private String species;
 	private char sex;
 	private float weight;
-	private double gps[][];
+	protected Gps gps;
 	
-	public Animal(String species, char sex, float weight, double gps[][])
+	public Animal(String species, char sex, float weight, String coords)
 	{
+		this.gps = new Gps();
 		this.species = species;
 		this.sex = sex;
 		this.weight = weight;
-		this.gps = gps;
+		System.out.println(coords);
+		this.gps.addCoords(coords);
 	}
 	
 	//overloaded: Animal no coords
 	public Animal(String species, char sex, float weight){
+		this.gps = new Gps();
+		this.species = species;
+		this.sex = sex;
+		this.weight = weight;
+		
+	}
+	//overloaded: Animal with a full gps
+	public Animal(String species, char sex, float weight, Gps gps){
+		this.species = species;
+		this.sex = sex;
+		this.weight = weight;
+		this.gps = new Gps();
+		for (String a : gps.coordList){
+			this.gps.addCoords(a);
+		}
 		
 	}
 	
 	public String makeString(){
-		String s = this.getSpecies() + "\t" + this.getSex() + "\t" + 
-				this.getWeight() + "\t" + this.getGps()[0][0] + "\t" + 
-				this.getGps()[0][1];
+		String s = this.getSpecies().toString() + "   " + this.getSex() + "   " + 
+				this.getWeight();
+		System.out.println(s);
 		return s;
 	}
 	
@@ -45,12 +62,6 @@ public class Animal {
 	}
 	public void setWeight(float weight) {
 		this.weight = weight;
-	}
-	public double[][] getGps() {
-		return gps;
-	}
-	public void setGps(double gps[][]) {
-		this.gps = gps;
 	}
 	
 }
