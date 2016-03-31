@@ -3,12 +3,17 @@ package penguins;
 public class Penguin extends Animal {
 
 	private double bloodpressure;	
-	public Penguin(String species, char sex, float weight, double[][] gps) {
-		super(species, sex, weight, gps);
+	public Penguin(String species, char sex, float weight, String coords) {
+		super(species, sex, weight, coords);
 		// TODO Auto-generated constructor stub
 	}
 	
-	public Penguin(String species, char sex, float weight, double[][] gps, double bloodpressure) {
+	public Penguin(String species, char sex, float weight, String coords, double bloodpressure) {
+		super(species, sex, weight, coords);
+		this.setBloodpressure(bloodpressure);
+		// TODO Auto-generated constructor stub
+	}
+	public Penguin(String species, char sex, float weight, Gps gps, double bloodpressure) {
 		super(species, sex, weight, gps);
 		this.setBloodpressure(bloodpressure);
 		// TODO Auto-generated constructor stub
@@ -16,7 +21,7 @@ public class Penguin extends Animal {
 	
 	@Override
 	public String makeString(){
-		String s = super.makeString() + "\t" +  String.valueOf(getBloodpressure());
+		String s = super.makeString() + "   " +  String.valueOf(getBloodpressure());
 		return s;
 	}
 
