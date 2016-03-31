@@ -2,6 +2,8 @@ package penguins;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
@@ -32,10 +34,14 @@ import javax.swing.JMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JTextPane;
 import javax.swing.JScrollBar;
+import javax.swing.Timer;
 
+import java.awt.SystemColor;
+
+import javax.swing.border.CompoundBorder;
 
 public class Gui implements ActionListener {
-	private JFrame frame;
+	private JFrame frmPenguinTrackingApp;
 	private JSpinner jspWeight;
 	private JComboBox cboSpecies;
 	private JRadioButton rdbtnMale;
@@ -49,26 +55,34 @@ public class Gui implements ActionListener {
 	private JLabel lblInvalidLong;
 	private JLabel lblSexError;
 	private JLabel lblTheme;
-	
 	private JTextPane textPane;
-	private JButton btnValidate;
-	private JButton btnExport;
-	private JButton btnAnother;
+	private JButton btnAddCoords;
+	private JButton btnSave;
+	private JButton btnCancel;
+	private JButton btnBack;
 	
 	private static final Controller controller = new Controller();
+	private JPanel pnlMain;
 	private JPanel pnlReport;
 	private JPanel pnlLog;
 	private JTextField txtOutputPath;
 	private JTextField txtInputPath;
 	
+	private Timer timer;
+	private final int DELAY = 5;
+
+	
+	private Gps formCoords;
 	//a special variable for the input dialog whether it completed
 	boolean result;
+	private JTextPane tpnCoords;
+	private JButton btnViewFile;
+	private JLabel lblNewLabel;
+	private JLabel lblNewLabel_1;
+	private JLabel lblTracking;
+	private JLabel lblNewLabel_2;
+	private JLabel lblViewImportedText;
 	
-	public Gui() {
-		initialize();
-		//controller = new Controller();
-	}
-
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
@@ -78,7 +92,7 @@ public class Gui implements ActionListener {
 					Gui mygui = new Gui();
 					mygui.initialize();
 					//set visible makes the form components visible and active
-					mygui.frame.setVisible(true);
+					mygui.frmPenguinTrackingApp.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -86,28 +100,297 @@ public class Gui implements ActionListener {
 		});
 	}
 	
+	public Gui() {
+		initialize();
+	}
 	
 	private void initialize() {
-		frame = new JFrame();
-		frame.setBounds(100, 100, 515, 427);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.getContentPane().setLayout(null);
+		formCoords = new Gps(); //create Gps object to save coordinates
+		frmPenguinTrackingApp = new JFrame();
+		frmPenguinTrackingApp.setTitle("Penguin Tracking App");
+		frmPenguinTrackingApp.setBounds(100, 100, 420, 519);
+		frmPenguinTrackingApp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frmPenguinTrackingApp.getContentPane().setLayout(null);
+		btngroup = new ButtonGroup();
+		
+		pnlMain = new JPanel();
+		pnlMain.setBounds(0, 0, 410, 460);
+		frmPenguinTrackingApp.getContentPane().add(pnlMain);
+		pnlMain.setLayout(null);
+		
+		JLabel lblMap = new JLabel();
+		lblMap.setIcon(new ImageIcon(Gui.class.getResource("/map.png")));
+		lblMap.setBounds(10, 155, 390, 305);
+		pnlMain.add(lblMap);
+		
+		JButton btnAddAnimal = new JButton("Add Animal");
+		btnAddAnimal.setToolTipText("Add a tracker for a new animal");
+		btnAddAnimal.setForeground(new Color(0, 0, 128));
+		btnAddAnimal.setBackground(SystemColor.activeCaption);
+		btnAddAnimal.setFont(new Font("Arial", Font.PLAIN, 9));
+		btnAddAnimal.setBounds(10, 11, 89, 23);
+		btnAddAnimal.setActionCommand("addanimal");
+		btnAddAnimal.addActionListener(this);
+		
+		pnlMain.add(btnAddAnimal);
+		
+		JButton btnSaveFile = new JButton("Save to File");
+		btnSaveFile.setToolTipText("Save your animals and their coordinates to a textfile");
+		btnSaveFile.setForeground(new Color(0, 0, 128));
+		btnSaveFile.setBackground(SystemColor.activeCaption);
+		btnSaveFile.setFont(new Font("Arial", Font.PLAIN, 9));
+		btnSaveFile.setBounds(10, 45, 89, 23);
+		btnSaveFile.setActionCommand("savefile");
+		btnSaveFile.addActionListener(this);
+		pnlMain.add(btnSaveFile);
+		
+		btnViewFile = new JButton("View File");
+		btnViewFile.setToolTipText("View an existing animal text file");
+		btnViewFile.setForeground(new Color(0, 0, 128));
+		btnViewFile.setBackground(SystemColor.activeCaption);
+		btnViewFile.setFont(new Font("Arial", Font.PLAIN, 9));
+		btnViewFile.setBounds(10, 79, 89, 23);
+		btnViewFile.setActionCommand("viewfile");
+		btnViewFile.addActionListener(this);
+		pnlMain.add(btnViewFile);
+		
+		lblNewLabel = new JLabel("Arctic Tracking App");
+		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 28));
+		lblNewLabel.setBounds(109, 14, 279, 88);
+		pnlMain.add(lblNewLabel);
+		
+		lblTracking = new JLabel("Not Tracking any Species Yet");
+		lblTracking.setForeground(new Color(0, 0, 128));
+		lblTracking.setBounds(10, 124, 186, 23);
+		pnlMain.add(lblTracking);
 		
 		pnlLog = new JPanel();
-		pnlLog.setBounds(0, 0, 499, 368);
-		frame.getContentPane().add(pnlLog);
+		pnlLog.setBounds(0, 0, 410, 460);
+		frmPenguinTrackingApp.getContentPane().add(pnlLog);
 		pnlLog.setLayout(null);
 		
-		pnlLog.setVisible(true);
+		pnlLog.setVisible(false);
+		
+		cboSpecies = new JComboBox();
+		cboSpecies.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if(cboSpecies.getSelectedIndex() != -1){
+					if (cboSpecies.getSelectedItem().equals("Penguin")){
+						lblTheme.setText("Blood Pressure");
+					}
+					if (cboSpecies.getSelectedItem().equals("Sea Lion")){
+						lblTheme.setText("# of Spots");
+					}
+					if (cboSpecies.getSelectedItem().equals("Walrus")){
+						lblTheme.setText("Dental Health");
+					}
+					//else {System.out.println(cboSpecies.getSelectedItem());}
+				}
+			}
+		});
+		cboSpecies.setModel(new DefaultComboBoxModel(new String[] {"Penguin", "Sea Lion", "Walrus"}));
+		cboSpecies.setBounds(22, 64, 129, 20);
+		pnlLog.add(cboSpecies);
+		rdbtnMale = new JRadioButton("Male");
+		rdbtnMale.setFont(new Font("Arial", Font.PLAIN, 10));
+		rdbtnMale.setBounds(32, 90, 109, 23);
+		pnlLog.add(rdbtnMale);
+		btngroup.add(rdbtnMale);
+		
+		rdbtnFemale = new JRadioButton("Female");
+		rdbtnFemale.setFont(new Font("Arial", Font.PLAIN, 10));
+		rdbtnFemale.setBounds(32, 115, 109, 23);
+		pnlLog.add(rdbtnFemale);
+		btngroup.add(rdbtnFemale);
+		
+		jspWeight = new JSpinner();
+		jspWeight.setModel(new SpinnerNumberModel(new Integer(0), new Integer(0), null, new Integer(1)));
+		jspWeight.setBounds(32, 145, 47, 20);
+		pnlLog.add(jspWeight);
+		
+		JLabel lblWeight = new JLabel("Weight");
+		lblWeight.setFont(new Font("Arial", Font.PLAIN, 10));
+		lblWeight.setBounds(105, 148, 46, 14);
+		pnlLog.add(lblWeight);
+		
+		
+		txtTheme = new JTextField();
+		txtTheme.setBounds(32, 176, 86, 20);
+		pnlLog.add(txtTheme);
+		txtTheme.setColumns(10);
+		
+		tpnCoords = new JTextPane();
+		tpnCoords.setBorder(new CompoundBorder());
+		tpnCoords.setEnabled(false);
+		tpnCoords.setEditable(false);
+		tpnCoords.setFont(new Font("Arial", Font.PLAIN, 9));
+		tpnCoords.setBounds(22, 207, 295, 110);
+		pnlLog.add(tpnCoords);
+		
+		lblTheme = new JLabel("Blood Pressure");
+		lblTheme.setFont(new Font("Arial", Font.PLAIN, 10));
+		lblTheme.setBounds(128, 179, 86, 14);
+		pnlLog.add(lblTheme);
+		
+		JButton btnClear = new JButton("Clear");
+		btnClear.setActionCommand("clear");
+		btnClear.addActionListener(this);
+		btnClear.setFont(new Font("Arial", Font.PLAIN, 10));
+		btnClear.setBounds(22, 393, 89, 23);
+		pnlLog.add(btnClear);
+		
+		btnCancel = new JButton("Cancel");
+		btnCancel.setActionCommand("cancel");
+		btnCancel.addActionListener(this);
+		btnCancel.setFont(new Font("Arial", Font.PLAIN, 10));
+		btnCancel.setBounds(22, 426, 89, 23);
+		pnlLog.add(btnCancel);
+		
+		
+		btnSave = new JButton("Save");
+		btnSave.setBounds(306, 426, 89, 23);
+		btnSave.setActionCommand("savelog");
+		btnSave.setFont(new Font("Arial", Font.PLAIN, 10));
+		pnlLog.add(btnSave);
+		btnSave.addActionListener(this);
+		
+		lblInvalidTheme = new JLabel("Invalid");
+		lblInvalidTheme.setFont(new Font("Arial", Font.PLAIN, 10));
+		lblInvalidTheme.setForeground(Color.RED);
+		lblInvalidTheme.setBounds(224, 179, 46, 14);
+		pnlLog.add(lblInvalidTheme);
+		lblInvalidTheme.setVisible(false);
+		
+		lblSexError = new JLabel("Pick Male or Female");
+		lblSexError.setForeground(Color.RED);
+		lblSexError.setVisible(false);
+		lblSexError.setFont(new Font("Arial", Font.PLAIN, 10));
+		lblSexError.setBounds(215, 94, 123, 14);
+		pnlLog.add(lblSexError);
+		
+		txtLat = new JTextField();
+		txtLat.setBounds(22, 327, 86, 20);
+		pnlLog.add(txtLat);
+		txtLat.setColumns(10);
+		
+		txtLong = new JTextField();
+		txtLong.setBounds(128, 327, 86, 20);
+		pnlLog.add(txtLong);
+		txtLong.setColumns(10);
+		
+		JLabel lblLong = new JLabel("Long");
+		lblLong.setBounds(128, 349, 24, 13);
+		pnlLog.add(lblLong);
+		lblLong.setFont(new Font("Arial", Font.PLAIN, 10));
+		
+		JLabel lblLat = new JLabel("Lat");
+		lblLat.setBounds(25, 351, 24, 13);
+		pnlLog.add(lblLat);
+		lblLat.setFont(new Font("Arial", Font.PLAIN, 10));
+		
+		lblInvalidLong = new JLabel("Invalid");
+		lblInvalidLong.setBounds(172, 348, 46, 14);
+		pnlLog.add(lblInvalidLong);
+		lblInvalidLong.setFont(new Font("Arial", Font.PLAIN, 10));
+		lblInvalidLong.setForeground(Color.RED);
+		
+		lblInvalidLat = new JLabel("Invalid");
+		lblInvalidLat.setBounds(70, 349, 46, 14);
+		pnlLog.add(lblInvalidLat);
+		lblInvalidLat.setFont(new Font("Arial", Font.PLAIN, 10));
+		lblInvalidLat.setForeground(Color.RED);
+		
+		btnAddCoords = new JButton("Add Coords");
+		btnAddCoords.setBounds(228, 328, 89, 23);
+		pnlLog.add(btnAddCoords);
+		btnAddCoords.setActionCommand("addcoords");
+		btnAddCoords.setFont(new Font("Arial", Font.PLAIN, 10));
+		
+		lblNewLabel_2 = new JLabel("Track New Animal");
+		lblNewLabel_2.setForeground(new Color(0, 0, 139));
+		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 24));
+		lblNewLabel_2.setBounds(22, 11, 234, 42);
+		pnlLog.add(lblNewLabel_2);
+		
+		btnAddCoords.addActionListener(this);
+		lblInvalidLat.setVisible(false);
+		lblInvalidLong.setVisible(false);
+		
 		
 		
 		pnlReport = new JPanel();
-		pnlReport.setBounds(0, 0, 499, 368);
-		frame.getContentPane().add(pnlReport);
+		pnlReport.setBounds(0, 0, 410, 460);
+		frmPenguinTrackingApp.getContentPane().add(pnlReport);
 		pnlReport.setLayout(null);
+		pnlReport.setVisible(false);
+		textPane = new JTextPane();
+		textPane.setFont(new Font("Arial", Font.PLAIN, 9));
+		textPane.setEditable(false);
+		textPane.setBounds(10, 103, 360, 265);
+		pnlReport.add(textPane);
+		
+		JButton btnReadFile = new JButton("Read File");
+		btnReadFile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("read file clicked");
+				try {
+					if (controller.validateFilePath(controller.getBusiness().getinputPath()) != 3){
+						if (inputLoop("Please specify a file to read from: ", false) == true){
+							textPane.setText(controller.getBusiness().readFile(txtInputPath.getText()));
+						}
+					};
+					
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+		btnReadFile.setFont(new Font("Arial", Font.PLAIN, 9));
+		btnReadFile.setBounds(313, 426, 89, 23);
+		pnlReport.add(btnReadFile);
+		
+		JScrollBar scrollBar = new JScrollBar();
+		scrollBar.setBounds(372, 103, 17, 265);
+		pnlReport.add(scrollBar);
+		
+		txtOutputPath = new JTextField();
+		txtOutputPath.setFont(new Font("Arial", Font.PLAIN, 9));
+		txtOutputPath.setBounds(76, 373, 232, 20);
+		pnlReport.add(txtOutputPath);
+		txtOutputPath.setColumns(10);
+		txtOutputPath.setEnabled(false);
+		
+		JLabel lblOutputPath = new JLabel("Output Path:");
+		lblOutputPath.setFont(new Font("Arial", Font.PLAIN, 9));
+		lblOutputPath.setBounds(10, 376, 56, 14);
+		pnlReport.add(lblOutputPath);
+		
+		JLabel lblInputPath = new JLabel("Input Path:");
+		lblInputPath.setFont(new Font("Arial", Font.PLAIN, 9));
+		lblInputPath.setBounds(10, 401, 56, 14);
+		pnlReport.add(lblInputPath);
+		
+		txtInputPath = new JTextField();
+		txtInputPath.setText((String) null);
+		txtInputPath.setFont(new Font("Arial", Font.PLAIN, 9));
+		txtInputPath.setColumns(10);
+		txtInputPath.setBounds(76, 397, 232, 20);
+		pnlReport.add(txtInputPath);
+		txtInputPath.setEnabled(false);
+		
+		txtOutputPath.setText(controller.getBusiness().getoutputPath());
+		txtInputPath.setText(controller.getBusiness().getinputPath());
+		
+		lblViewImportedText = new JLabel("View Report From File");
+		lblViewImportedText.setForeground(new Color(0, 0, 128));
+		lblViewImportedText.setFont(new Font("Tahoma", Font.BOLD, 24));
+		lblViewImportedText.setBounds(10, 11, 360, 51);
+		pnlReport.add(lblViewImportedText);
+		pnlReport.setVisible(false);
 		
 		JMenuBar menuBar = new JMenuBar();
-		frame.setJMenuBar(menuBar);
+		frmPenguinTrackingApp.setJMenuBar(menuBar);
 		
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
@@ -173,60 +456,65 @@ public class Gui implements ActionListener {
 		menuBar.add(mnAbout);
 		
 		JMenuItem mntmAbout = new JMenuItem("About");
+		mntmAbout.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				About myabout = new About();
+				myabout.setVisible(true);
+			}
+		});
 		mnAbout.add(mntmAbout);
-		
-		loadLog();
-		//frame.getContentPane().setLayout(groupLayout);
 		loadReport();
-		//frame.setVisible(true);
+
 	}
+	
 	//creates the dialog to have user specify a valid file path for either read/write
-	private boolean inputLoop(String msg, boolean write){ //boolean true = write/ false = read
+	private boolean inputLoop(String msg, boolean write){ //write should return 0, 2 is cancel
 		String jopFilePath = JOptionPane.showInputDialog(msg);
 		
 		result = true;
 		
 		if (jopFilePath == "" | jopFilePath == null){
 			result = false;
-			System.out.println("returning false");
+			System.out.println("cancel pressed. returning false");
 			return result; //updating file path abandoned
 		}
 		if (!write){
 			while (controller.validateFilePath(jopFilePath) == 0){
-				inputLoop("File does not exist. Please try again", write);
+				result = inputLoop("File does not exist. Please try again", write);
 				return result;
 			}
 		}
 		while (controller.validateFilePath(jopFilePath) == 1){ //1 = invalid file (not end in .txt)
-			inputLoop("Must be a valid text file. Please try again", write);
+			result = inputLoop("Must be a valid text file. Please try again", write);
 			return result;
 		}
 		while (controller.validateFilePath(jopFilePath) == 2){
-			inputLoop("That was not a valid filepath. Please try again", write);
+			result = inputLoop("That was not a valid filepath. Please try again", write);
 			return result;
 		}
 		if (write){
 			while (controller.validateFilePath(jopFilePath) == 3){
 				int dlgResult = JOptionPane.showConfirmDialog(null, "File already exists. Okay to Overwrite?");
 				if (dlgResult == 0){
-					//System.out.println("Result was Yes");
+					System.out.println("Result was Yes");
+					result = true;
 					controller.getBusiness().setoutputPath(jopFilePath);
 					return result;
 				}
 				
 				else if (dlgResult == 1){
 					System.out.println("Result was No");
-					inputLoop("Please Enter the filepath to read/write from: ", write);
-					return result;
+					result = inputLoop("Please Enter the filepath to read/write from: ", write);
+					return result;	
 				}
 				else if (dlgResult == 2){
-					System.out.println("Result was Cancel");
+					System.out.println("Result was cancel");
+					result = false;
+					return result;
+					}
 				}
-				
 			}
-			result = true;
-			return result;
-		}
+			
 		//finally, adjust paths.
 		if (write){
 			controller.getBusiness().setoutputPath(jopFilePath);
@@ -239,201 +527,12 @@ public class Gui implements ActionListener {
 		System.out.println("returning true");
 		return result;
 	}
+	
 	//load the report panel with all the proper button elements
 	private void loadReport(){
-		textPane = new JTextPane();
-		textPane.setFont(new Font("Arial", Font.PLAIN, 9));
-		textPane.setEditable(false);
-		textPane.setBounds(10, 11, 462, 265);
-		pnlReport.add(textPane);
-		
-		JButton btnReadFile = new JButton("Read File");
-		btnReadFile.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("read file clicked");
-				try {
-					if (controller.validateFilePath(controller.getBusiness().getinputPath()) != 3){
-						if (inputLoop("Please specify a file to read from: ", false) == true){
-							textPane.setText(controller.getBusiness().readFile(txtInputPath.getText()));
-						}
-					};
-					
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		});
-		btnReadFile.setFont(new Font("Arial", Font.PLAIN, 9));
-		btnReadFile.setBounds(219, 334, 89, 23);
-		pnlReport.add(btnReadFile);
-		
-		JScrollBar scrollBar = new JScrollBar();
-		scrollBar.setBounds(472, 11, 17, 265);
-		pnlReport.add(scrollBar);
-		
-		txtOutputPath = new JTextField();
-		txtOutputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		txtOutputPath.setBounds(76, 281, 232, 20);
-		pnlReport.add(txtOutputPath);
-		txtOutputPath.setColumns(10);
-		txtOutputPath.setEnabled(false);
-		
-		JLabel lblOutputPath = new JLabel("Output Path:");
-		lblOutputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		lblOutputPath.setBounds(10, 284, 56, 14);
-		pnlReport.add(lblOutputPath);
-		
-		JLabel lblInputPath = new JLabel("Input Path:");
-		lblInputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		lblInputPath.setBounds(10, 309, 56, 14);
-		pnlReport.add(lblInputPath);
-		
-		txtInputPath = new JTextField();
-		txtInputPath.setText((String) null);
-		txtInputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		txtInputPath.setColumns(10);
-		txtInputPath.setBounds(76, 305, 232, 20);
-		pnlReport.add(txtInputPath);
-		txtInputPath.setEnabled(false);
-		
-		txtOutputPath.setText(controller.getBusiness().getoutputPath());
-		txtInputPath.setText(controller.getBusiness().getinputPath());
-		
 		pnlReport.setVisible(false);
 	}
-	//Load the pnLog panel with the form elements (some shit happens when you adjust gui in design view to elements
-	private void loadLog(){
-		
-		btngroup = new ButtonGroup();
-		cboSpecies = new JComboBox();
-		cboSpecies.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				if (cboSpecies.getSelectedItem().equals("Penguin")){
-					lblTheme.setText("Blood Pressure");
-				}
-				if (cboSpecies.getSelectedItem().equals("Sea Lion")){
-					lblTheme.setText("# of Spots");
-				}
-				if (cboSpecies.getSelectedItem().equals("Walrus")){
-					lblTheme.setText("Dental Health");
-				}
-			}
-		});
-		cboSpecies.setModel(new DefaultComboBoxModel(new String[] {"Penguin", "Sea Lion", "Walrus"}));
-		cboSpecies.setBounds(22, 30, 129, 20);
-		pnlLog.add(cboSpecies);
-		rdbtnMale = new JRadioButton("Male");
-		rdbtnMale.setFont(new Font("Arial", Font.PLAIN, 10));
-		rdbtnMale.setBounds(32, 56, 109, 23);
-		pnlLog.add(rdbtnMale);
-		btngroup.add(rdbtnMale);
-		
-		rdbtnFemale = new JRadioButton("Female");
-		rdbtnFemale.setFont(new Font("Arial", Font.PLAIN, 10));
-		rdbtnFemale.setBounds(32, 81, 109, 23);
-		pnlLog.add(rdbtnFemale);
-		btngroup.add(rdbtnFemale);
-		
-		jspWeight = new JSpinner();
-		jspWeight.setModel(new SpinnerNumberModel(new Integer(0), new Integer(0), null, new Integer(1)));
-		jspWeight.setBounds(32, 111, 47, 20);
-		pnlLog.add(jspWeight);
-		
-		JLabel lblWeight = new JLabel("Weight");
-		lblWeight.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblWeight.setBounds(105, 114, 46, 14);
-		pnlLog.add(lblWeight);
-		
-		txtLat = new JTextField();
-		txtLat.setBounds(32, 149, 86, 20);
-		pnlLog.add(txtLat);
-		txtLat.setColumns(10);
-		
-		txtLong = new JTextField();
-		txtLong.setColumns(10);
-		txtLong.setBounds(32, 180, 86, 20);
-		pnlLog.add(txtLong);
-		
-		JLabel lblLat = new JLabel("Lat");
-		lblLat.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblLat.setBounds(128, 152, 46, 14);
-		pnlLog.add(lblLat);
-		
-		JLabel lblLong = new JLabel("Long");
-		lblLong.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblLong.setBounds(128, 183, 46, 14);
-		pnlLog.add(lblLong);
-		
-		txtTheme = new JTextField();
-		txtTheme.setBounds(32, 222, 86, 20);
-		pnlLog.add(txtTheme);
-		txtTheme.setColumns(10);
-		
-		lblTheme = new JLabel("Blood Pressure");
-		lblTheme.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblTheme.setBounds(128, 225, 86, 14);
-		pnlLog.add(lblTheme);
-		
-		btnValidate = new JButton("Validate");
-		btnValidate.setFont(new Font("Arial", Font.PLAIN, 10));
-		btnValidate.setActionCommand("validate");
-		btnValidate.addActionListener(this);
-		btnValidate.setBounds(22, 334, 89, 23);
-		pnlLog.add(btnValidate);
-		
-		JButton btnClear = new JButton("Clear");
-		btnClear.setActionCommand("clear");
-		btnClear.addActionListener(this);
-		btnClear.setFont(new Font("Arial", Font.PLAIN, 10));
-		btnClear.setBounds(219, 29, 89, 23);
-		pnlLog.add(btnClear);
-		
-		btnAnother = new JButton("Another");
-		btnAnother.setActionCommand("another");
-		btnAnother.addActionListener(this);
-		btnAnother.setFont(new Font("Arial", Font.PLAIN, 10));
-		btnAnother.setBounds(120, 334, 89, 23);
-		pnlLog.add(btnAnother);
-		btnAnother.setEnabled(false);
-		
-		btnExport = new JButton("Export");
-		btnExport.setBounds(219, 334, 89, 23);
-		btnExport.setActionCommand("export");
-		btnExport.setFont(new Font("Arial", Font.PLAIN, 10));
-		pnlLog.add(btnExport);
-		btnExport.setEnabled(false);
-		btnExport.addActionListener(this);
-		
-		lblInvalidTheme = new JLabel("Invalid");
-		lblInvalidTheme.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblInvalidTheme.setForeground(Color.RED);
-		lblInvalidTheme.setBounds(224, 225, 46, 14);
-		pnlLog.add(lblInvalidTheme);
-		lblInvalidTheme.setVisible(false);
-		
-		lblInvalidLong = new JLabel("Invalid");
-		lblInvalidLong.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblInvalidLong.setForeground(Color.RED);
-		lblInvalidLong.setBounds(224, 183, 46, 14);
-		pnlLog.add(lblInvalidLong);
-		lblInvalidLong.setVisible(false);
-		
-		lblInvalidLat = new JLabel("Invalid");
-		lblInvalidLat.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblInvalidLat.setForeground(Color.RED);
-		lblInvalidLat.setBounds(224, 152, 46, 14);
-		pnlLog.add(lblInvalidLat);
-		lblInvalidLat.setVisible(false);
-		
-		lblSexError = new JLabel("Pick Male or Female");
-		lblSexError.setForeground(Color.RED);
-		lblSexError.setVisible(false);
-		lblSexError.setFont(new Font("Arial", Font.PLAIN, 10));
-		lblSexError.setBounds(147, 61, 123, 14);
-		pnlLog.add(lblSexError);
-		
-	}
+
 	
 	/**
 	 * Handles all form events
@@ -443,20 +542,25 @@ public class Gui implements ActionListener {
 	  public void actionPerformed(ActionEvent evt) {
 
 		String cmd = evt.getActionCommand();
-		//Validate Button Click
-		if (cmd == "validate"){
-			validateForm();
-		}
-		else if (cmd == "export"){
-			controller.getBusiness().listAnimals();
-			String file = controller.getBusiness().getoutputPath();
-			try {
-				controller.getBusiness().writeFile(file);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		//pnlLog Save Button Click
+		if (cmd == "savelog"){
+			//validate form data
+			if (validate()){
+				//save form data to object
+				System.out.println("coordlist size: " + formCoords.coordList.size());
+				saveAnimal();
+				//clear form
+				clearForm();
+				formCoords.clearCoords();
+				//go back to main form
+				pnlReport.setVisible(false);
+				pnlLog.setVisible(false);
+				pnlMain.setVisible(true);
+				
+				lblTracking.setText("Tracking " + controller.getBusiness().getAnimals().size() + " animal(s) so far");
 			}
 		}
+
 		else if (cmd == "import"){
 			String file = controller.getBusiness().getinputPath();
 			try {
@@ -466,25 +570,113 @@ public class Gui implements ActionListener {
 				e.printStackTrace();
 			}
 		}
-
-		else if (cmd == "another"){
-			addAnother();
+		//pnlLog Form Add Coords button click
+		else if (cmd == "addcoords"){
+			if (validateCoords()){
+				String c = txtLat.getText() + " " + txtLong.getText();
+				tpnCoords.setText(tpnCoords.getText() + c + "\n");
+				txtLat.setText("");
+				txtLong.setText("");
+				
+				formCoords.addCoords(c);
+			}
 		}
+		//pnlLog Clear Form button click
 		else if (cmd == "clear"){
 			clearForm();
 		}
+		//pnlMain Add Animal Button click
+		else if(cmd == "addanimal"){
+			pnlMain.setVisible(false);
+			pnlReport.setVisible(false);
+			pnlLog.setVisible(true);
+		}
+		//pnlMain Save to File button click
+		else if(cmd == "savefile"){
+			controller.getBusiness().listAnimals(); //TODO: if animals is 0 msg error.
+			
+			if (inputLoop("Please Specify a directory path and file name (ie. c:/temp/output.txt)", true)){
+				try {
+					System.out.println(controller.getBusiness().getoutputPath());
+					controller.getBusiness().writeFile(controller.getBusiness().getoutputPath());
+					System.out.println("done exporting file");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			};
+			
+			timer = new Timer(DELAY, new TimerHandler());
+
+		}
+		//pnlMain View File button click
+		else if(cmd == "viewfile"){
+			pnlMain.setVisible(false);
+			pnlLog.setVisible(false);
+			pnlReport.setVisible(true);
+		}
+		//pnlLog Cancel button click
+		else if (cmd == "cancel"){
+			clearForm();
+			pnlLog.setVisible(false);
+			pnlReport.setVisible(false);
+			pnlMain.setVisible(true);
+		}
 	}
 	
-	private void validateForm(){
+
+	//inner class
+		public class TimerHandler implements ActionListener {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+				doTick();
+				timer.stop();
+			}
+		}
+	
+	private void doTick()
+	{
+		int n = 0;
+		
+		while (n < 50){
+			System.out.println("tick " + n); //stub test
+			n += 1;
+		}
+		return;
+		
+	}
+	
+	//validate main log panel
+	private boolean validate(){
 		boolean validTheme = controller.validateTheme(txtTheme.getText(), cboSpecies.getSelectedItem().toString());
-		//System.out.println(validTheme);
+		
 		if (validTheme){
 			lblInvalidTheme.setVisible(false);
 		}
 		else {
 			lblInvalidTheme.setVisible(true);
 		}
+				
+		boolean validSex = true;
+		if (getSelectedButtonText(btngroup) == 'x'){
+			lblSexError.setVisible(true);
+			validSex = false;
+		}
+		else {
+			lblSexError.setVisible(false);
+			validSex = true;
+		}
 		
+		
+		if (validTheme && validSex){
+			return true;
+		}
+		else {return false;}
+	}
+	//validate coordinates (called by add coords button)
+	private boolean validateCoords(){
 		boolean validLat = controller.validateLatLong("lat", txtLat.getText());
 		if (validLat){
 			lblInvalidLat.setVisible(false);	
@@ -497,64 +689,35 @@ public class Gui implements ActionListener {
 		}
 		else { lblInvalidLong.setVisible(true);}
 		
-		boolean validSex = true;
-		if (getSelectedButtonText(btngroup) == 'x'){
-			lblSexError.setVisible(true);
-			validSex = false;
+		if (validLat && validLon){
+			return true;
 		}
-		else {
-			lblSexError.setVisible(false);
-			validSex = true;
-		}
+		else {return false;}
 		
-		
-		//if all are true, let export button be enabled
-		if (validTheme && validLat && validLon && validSex){
-			btnExport.setEnabled(true);
-			btnAnother.setEnabled(true);
-			
-			cboSpecies.setEnabled(false);
-			rdbtnMale.setEnabled(false);
-			rdbtnFemale.setEnabled(false);
-			jspWeight.setEnabled(false);
-			txtLat.setEnabled(false);
-			txtLong.setEnabled(false);
-			txtTheme.setEnabled(false);
-			
-			
-		}
 	}
 	
-	private void addAnother(){
-		//System.out.println("rdbtnMale text = " + rdbtnMale.getText());
+	//save animal form data to the list of animal objects in business class (called by Save button)
+	//call addAnimal
+	private void saveAnimal(){
+		
 		char sex = getSelectedButtonText(btngroup);
-		double coord[][] = {{Double.parseDouble(txtLat.getText()),Double.parseDouble(txtLong.getText())}};
-		
+		System.out.println("coordlist size: " + formCoords.coordList.size());
 		controller.getBusiness().addAnimal(cboSpecies.getSelectedItem().toString(), sex, 
-				(float) Float.parseFloat(jspWeight.getValue().toString()), coord, txtTheme.getText());
-		clearForm();
-		btnAnother.setEnabled(false);
-		
-		cboSpecies.setEnabled(true);
-		rdbtnMale.setEnabled(true);
-		rdbtnFemale.setEnabled(true);
-		jspWeight.setEnabled(true);
-		txtLat.setEnabled(true);
-		txtLong.setEnabled(true);
-		txtTheme.setEnabled(true);
-		
+				(float) Float.parseFloat(jspWeight.getValue().toString()), formCoords, txtTheme.getText());
 	}
 	
+	//clear values in form to blank
 	private void clearForm(){
-		cboSpecies.setSelectedIndex(0);
+		cboSpecies.setSelectedIndex(-1);
 		rdbtnMale.setSelected(true);
 		rdbtnFemale.setSelected(false);
 		jspWeight.setValue(0);
 		txtLat.setText("");
 		txtLong.setText("");
 		txtTheme.setText("");
-		
-		btnAnother.setEnabled(false);
+		tpnCoords.setText("");
+		formCoords.clearCoords();
+
 	}
 	private char getSelectedButtonText(ButtonGroup buttonGroup) {
         for (Enumeration<AbstractButton> buttons = buttonGroup.getElements(); buttons.hasMoreElements();) {
