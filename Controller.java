@@ -68,7 +68,7 @@ public class Controller {
 		File file = new File(filepath);
 		
 		if (!file.getParentFile().isDirectory()) {
-			System.out.println("THis is not a valid directory");
+			System.out.println("This is not a valid directory");
 			return 2;
 		}
 			
