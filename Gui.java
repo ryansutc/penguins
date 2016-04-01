@@ -39,11 +39,12 @@ import javax.swing.Timer;
 import java.awt.SystemColor;
 
 import javax.swing.border.CompoundBorder;
+import javax.swing.SwingConstants;
 
 public class Gui implements ActionListener {
 	private JFrame frmPenguinTrackingApp;
 	private JSpinner jspWeight;
-	private JComboBox cboSpecies;
+	private JComboBox<String> cboSpecies;
 	private JRadioButton rdbtnMale;
 	private JRadioButton rdbtnFemale;
 	private ButtonGroup btngroup;
@@ -60,17 +61,17 @@ public class Gui implements ActionListener {
 	private JButton btnSave;
 	private JButton btnCancel;
 	private JButton btnBack;
+	private JLabel lblTimerMsg;
 	
 	private static final Controller controller = new Controller();
 	private JPanel pnlMain;
 	private JPanel pnlReport;
 	private JPanel pnlLog;
-	private JTextField txtOutputPath;
-	private JTextField txtInputPath;
+	private JLabel lblInputPath;
 	
 	private Timer timer;
-	private final int DELAY = 5;
-
+	private final int DELAY = 60;
+	private int tick = 0;
 	
 	private Gps formCoords;
 	//a special variable for the input dialog whether it completed
@@ -78,7 +79,6 @@ public class Gui implements ActionListener {
 	private JTextPane tpnCoords;
 	private JButton btnViewFile;
 	private JLabel lblNewLabel;
-	private JLabel lblNewLabel_1;
 	private JLabel lblTracking;
 	private JLabel lblNewLabel_2;
 	private JLabel lblViewImportedText;
@@ -154,15 +154,23 @@ public class Gui implements ActionListener {
 		btnViewFile.addActionListener(this);
 		pnlMain.add(btnViewFile);
 		
-		lblNewLabel = new JLabel("Arctic Tracking App");
-		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 28));
-		lblNewLabel.setBounds(109, 14, 279, 88);
+		lblNewLabel = new JLabel("<html>Antarctic Animal <br/>\r\nTracking App</html>");
+		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
+		lblNewLabel.setBounds(109, 14, 279, 99);
 		pnlMain.add(lblNewLabel);
 		
 		lblTracking = new JLabel("Not Tracking any Species Yet");
 		lblTracking.setForeground(new Color(0, 0, 128));
 		lblTracking.setBounds(10, 124, 186, 23);
 		pnlMain.add(lblTracking);
+		
+		lblTimerMsg = new JLabel("timer msg");
+		lblTimerMsg.setHorizontalAlignment(SwingConstants.RIGHT);
+		lblTimerMsg.setForeground(Color.RED);
+		lblTimerMsg.setBounds(239, 130, 149, 14);
+		pnlMain.add(lblTimerMsg);
+		lblTimerMsg.setVisible(false);
 		
 		pnlLog = new JPanel();
 		pnlLog.setBounds(0, 0, 410, 460);
@@ -171,7 +179,7 @@ public class Gui implements ActionListener {
 		
 		pnlLog.setVisible(false);
 		
-		cboSpecies = new JComboBox();
+		cboSpecies = new JComboBox<String>();
 		cboSpecies.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				if(cboSpecies.getSelectedIndex() != -1){
@@ -188,7 +196,7 @@ public class Gui implements ActionListener {
 				}
 			}
 		});
-		cboSpecies.setModel(new DefaultComboBoxModel(new String[] {"Penguin", "Sea Lion", "Walrus"}));
+		cboSpecies.setModel(new DefaultComboBoxModel<String>(new String[] {"Penguin", "Sea Lion", "Walrus"}));
 		cboSpecies.setBounds(22, 64, 129, 20);
 		pnlLog.add(cboSpecies);
 		rdbtnMale = new JRadioButton("Male");
@@ -312,11 +320,6 @@ public class Gui implements ActionListener {
 		lblNewLabel_2.setBounds(22, 11, 234, 42);
 		pnlLog.add(lblNewLabel_2);
 		
-		btnAddCoords.addActionListener(this);
-		lblInvalidLat.setVisible(false);
-		lblInvalidLong.setVisible(false);
-		
-		
 		
 		pnlReport = new JPanel();
 		pnlReport.setBounds(0, 0, 410, 460);
@@ -330,127 +333,55 @@ public class Gui implements ActionListener {
 		pnlReport.add(textPane);
 		
 		JButton btnReadFile = new JButton("Read File");
-		btnReadFile.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				System.out.println("read file clicked");
-				try {
-					if (controller.validateFilePath(controller.getBusiness().getinputPath()) != 3){
-						if (inputLoop("Please specify a file to read from: ", false) == true){
-							textPane.setText(controller.getBusiness().readFile(txtInputPath.getText()));
-						}
-					};
-					
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		});
+		btnReadFile.setActionCommand("readfile");
+		btnReadFile.addActionListener(this);
 		btnReadFile.setFont(new Font("Arial", Font.PLAIN, 9));
-		btnReadFile.setBounds(313, 426, 89, 23);
+		btnReadFile.setBounds(299, 426, 89, 23);
 		pnlReport.add(btnReadFile);
 		
 		JScrollBar scrollBar = new JScrollBar();
 		scrollBar.setBounds(372, 103, 17, 265);
 		pnlReport.add(scrollBar);
 		
-		txtOutputPath = new JTextField();
-		txtOutputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		txtOutputPath.setBounds(76, 373, 232, 20);
-		pnlReport.add(txtOutputPath);
-		txtOutputPath.setColumns(10);
-		txtOutputPath.setEnabled(false);
+		JLabel lblInput = new JLabel("Input File Path:");
+		lblInput.setFont(new Font("Arial", Font.PLAIN, 9));
+		lblInput.setBounds(10, 383, 77, 14);
+		pnlReport.add(lblInput);
 		
-		JLabel lblOutputPath = new JLabel("Output Path:");
-		lblOutputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		lblOutputPath.setBounds(10, 376, 56, 14);
-		pnlReport.add(lblOutputPath);
-		
-		JLabel lblInputPath = new JLabel("Input Path:");
+		lblInputPath = new JLabel();
+		lblInputPath.setText((String) null);
 		lblInputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		lblInputPath.setBounds(10, 401, 56, 14);
+		lblInputPath.setBounds(121, 379, 232, 20);
 		pnlReport.add(lblInputPath);
-		
-		txtInputPath = new JTextField();
-		txtInputPath.setText((String) null);
-		txtInputPath.setFont(new Font("Arial", Font.PLAIN, 9));
-		txtInputPath.setColumns(10);
-		txtInputPath.setBounds(76, 397, 232, 20);
-		pnlReport.add(txtInputPath);
-		txtInputPath.setEnabled(false);
-		
-		txtOutputPath.setText(controller.getBusiness().getoutputPath());
-		txtInputPath.setText(controller.getBusiness().getinputPath());
+		lblInputPath.setEnabled(false);
+		lblInputPath.setText(controller.getBusiness().getinputPath());
 		
 		lblViewImportedText = new JLabel("View Report From File");
 		lblViewImportedText.setForeground(new Color(0, 0, 128));
 		lblViewImportedText.setFont(new Font("Tahoma", Font.BOLD, 24));
 		lblViewImportedText.setBounds(10, 11, 360, 51);
 		pnlReport.add(lblViewImportedText);
+		
+		btnBack = new JButton("Back");
+		btnBack.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pnlMain.setVisible(true);
+				pnlLog.setVisible(false);
+				pnlReport.setVisible(false);
+			}
+		});
+		btnBack.setToolTipText("Return to Main Panel");
+		btnBack.setBounds(10, 425, 89, 23);
+		btnBack.setFont(new Font("Arial", Font.PLAIN, 9));
+		pnlReport.add(btnBack);
 		pnlReport.setVisible(false);
+		
+		btnAddCoords.addActionListener(this);
+		lblInvalidLat.setVisible(false);
+		lblInvalidLong.setVisible(false);
 		
 		JMenuBar menuBar = new JMenuBar();
 		frmPenguinTrackingApp.setJMenuBar(menuBar);
-		
-		JMenu mnFile = new JMenu("File");
-		menuBar.add(mnFile);
-		
-		JMenuItem mntmReportForm = new JMenuItem("Report Form");
-		mntmReportForm.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				if (mntmReportForm.getText().equals("Report Form")){
-					pnlLog.setVisible(false);
-					pnlReport.setVisible(true);
-					
-					txtOutputPath.setText(controller.getBusiness().getoutputPath());
-					txtInputPath.setText(controller.getBusiness().getinputPath());
-					mntmReportForm.setText("Log Form");
-				}
-				else if (mntmReportForm.getText().equals("Log Form")){
-					pnlLog.setVisible(true);
-					pnlReport.setVisible(false);
-					mntmReportForm.setText("Report Form");
-				}
-			}
-		});
-		mnFile.add(mntmReportForm);
-		
-		JMenu mnSettings = new JMenu("Settings");
-		menuBar.add(mnSettings);
-		
-		JMenuItem mntmOutputFile = new JMenuItem("Set Output File...");
-		mntmOutputFile.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				//handle file input entering
-				String messageName = "Please pick/create the directory and file to write to: ";
-				
-				//validate filepath first
-				inputLoop(messageName, true);
-				
-				//pnlLog.setVisible(false);
-				//pnlReport.setVisible(true);
-			}
-		});
-		mnSettings.add(mntmOutputFile);
-		
-		JMenuItem mntmInputFile = new JMenuItem("Set Input File...");
-		mntmInputFile.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				//handle file input entering
-				String messageName = "Please pick the file to import: ";
-				
-				//validate filepath first
-				inputLoop(messageName, false);
-				
-				try {
-					textPane.setText(controller.getBusiness().readFile(controller.getBusiness().getinputPath()));
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		});
-		mnSettings.add(mntmInputFile);
 		
 		JMenu mnAbout = new JMenu("About");
 		menuBar.add(mnAbout);
@@ -518,11 +449,10 @@ public class Gui implements ActionListener {
 		//finally, adjust paths.
 		if (write){
 			controller.getBusiness().setoutputPath(jopFilePath);
-			txtOutputPath.setText(jopFilePath);
 		}
 		else {
 			controller.getBusiness().setinputPath(jopFilePath);
-			txtInputPath.setText(jopFilePath);
+			lblInputPath.setText(jopFilePath);
 		}
 		System.out.println("returning true");
 		return result;
@@ -542,6 +472,7 @@ public class Gui implements ActionListener {
 	  public void actionPerformed(ActionEvent evt) {
 
 		String cmd = evt.getActionCommand();
+		
 		//pnlLog Save Button Click
 		if (cmd == "savelog"){
 			//validate form data
@@ -594,7 +525,11 @@ public class Gui implements ActionListener {
 		//pnlMain Save to File button click
 		else if(cmd == "savefile"){
 			controller.getBusiness().listAnimals(); //TODO: if animals is 0 msg error.
-			
+			if (controller.getBusiness().getAnimals().isEmpty()){
+				JOptionPane.showMessageDialog(this.pnlMain, "Whoops. You have no records to export. "
+						+ "Create some data and try again.", "Error: no data", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
 			if (inputLoop("Please Specify a directory path and file name (ie. c:/temp/output.txt)", true)){
 				try {
 					System.out.println(controller.getBusiness().getoutputPath());
@@ -607,7 +542,26 @@ public class Gui implements ActionListener {
 			};
 			
 			timer = new Timer(DELAY, new TimerHandler());
-
+			timer.start();
+		}
+		//pnlReport Read File button click
+		else if(cmd == "readfile"){
+			System.out.println("read file clicked");
+			try {
+		
+				if (inputLoop("File: " + controller.getBusiness().getinputPath() +
+						" does not exist.\n" +
+						"Please specify a file to read from: ", false) == true)
+				{
+					textPane.setText(controller.getBusiness().readFile(lblInputPath.getText()));
+				}
+				
+				
+				
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 		//pnlMain View File button click
 		else if(cmd == "viewfile"){
@@ -627,23 +581,42 @@ public class Gui implements ActionListener {
 
 	//inner class
 		public class TimerHandler implements ActionListener {
-
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
 				doTick();
-				timer.stop();
+				
 			}
+			
 		}
 	
-	private void doTick()
-	{
-		int n = 0;
-		
-		while (n < 50){
-			System.out.println("tick " + n); //stub test
-			n += 1;
+	private void doTick(){
+		tick += 1;
+		//System.out.println("tick=" + tick);
+		if (tick < 10){
+			lblTimerMsg.setText("Saving to File");
 		}
+		else if (tick < 20){
+			lblTimerMsg.setText("Saving to File.");
+		}
+		else if (tick < 30){
+			lblTimerMsg.setText("Saving to File..");
+		}
+		else if (tick < 40){
+			lblTimerMsg.setText("Saving to File...");
+		}
+		else if (tick < 50){
+			lblTimerMsg.setText("File saved Successfully!");
+		}
+		else {
+			lblTimerMsg.setText("");
+			timer.restart();
+			timer.stop();
+			
+		}
+			
+		
 		return;
 		
 	}
