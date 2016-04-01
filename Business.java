@@ -15,8 +15,8 @@ public class Business {
 	private String inputPath;
 
 	public Business(){
-		this.outputPath = "c:/temp/penguinfile.txt";
-		this.inputPath = "c:/temp/penguinfile.txt";
+		this.outputPath = "";
+		this.inputPath = "";
 		animals = new ArrayList<Animal>(); 
 	}
 	
